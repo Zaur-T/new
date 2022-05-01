@@ -670,4 +670,34 @@ To connect to your database from outside the cluster execute the following comma
    kubectl port-forward --namespace cassandra svc/cassandra 9042:9042 &
    cqlsh -u cassandra -p $CASSANDRA_PASSWORD 127.0.0.1 9042
 ```
+**export cassandra password with `export CASSANDRA_PASSWORD=$(kubectl get secret --namespace "cassandra" cassandra -o jsonpath="{.data.cassandra-password}" | base64 --decode)`**
+**run cassandra client with:**
+```
+kubectl run --namespace cassandra cassandra-client --rm --tty -i --restart='Never' \
+   --env CASSANDRA_PASSWORD=$CASSANDRA_PASSWORD \
+    \
+   --image docker.io/bitnami/cassandra:4.0.3-debian-10-r59 -- bash
+```
+**run inside the pod sqlsh client:** `cqlsh -u cassandra -p $CASSANDRA_PASSWORD cassandra`
+### OR
+**shell into cassandra pod via K9s nad run**  `cqlsh -u cassandra -p $CASSANDRA_PASSWORD cassandra`
 
+**next run the following**:
+```
+CREATE KEYSPACE store
+  WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 3 };
+```
+
+```
+CREATE TABLE shopping_cart (
+	... PRIMARY KEY(id),
+	... item_count int,
+	... last_update_timestamp timestamp)
+```
+```
+INSERT INTO shopping_cart (item_count, last_update_timestamp) values('3', '2022-05-02');
+```
+**to show the data inseted**
+```
+select * from shopping_cart
+```
