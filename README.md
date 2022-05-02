@@ -111,9 +111,25 @@ resources:
   limits:
     memory: "1000m"
     cpu: "2Gi" 
-nodeAffinityPreset:
-  values:
-    - worker
+affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            - key: type
+              operator: In
+              values:
+              - worker
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: type
+                operator: In
+                values:
+                - worker
+          topologyKey: kubernetes.io/hostname
+
 ```
 
 **run `helm dep up` and then run `helm install cassandra cassandra -f cassandra/gdp-vaues.yaml -n cassandra --debug` to check the overrides (see below)`**
@@ -716,5 +732,24 @@ INSERT INTO shopping_cart (item_count, last_update_timestamp) values('3', '2022-
 select * from shopping_cart
 ```
 
-### Test 3:  
+### Test 3: Administration of Kubernetes nodes + Cassandra availability test
+
+**Kubernetes node administration:**
+
+- Disable scheduling of pods on the node `k3d-gdp-test-assignment-agent-1`with:
+```
+kubectl taint nodes k3d-gdp-test-assignment-agent-1 type=db:NoSchedule
+```
+- Safely evict all the pods from the node `k3d-gdp-test-assignment-agent-1`:
+```
+kubectl drain k3d-gdp-test-assignment-agent-1
+```
+Delete the k3s agent node named `k3d-gdp-test-assignment-agent-1`:
+```
+k3d node delete k3d-gdp-test-assignment-agent-1
+```
+- Check that there is a cassandra pod (which was running on `k3d-gdp-test-assignment-agent-1`) that is in pending state and can not be scheduled, **Explain why**
+##### explanation:
+** since we have pod antiaffinity on the rest two nodes, we cannot schedule 3rd pod on these nodes. It will be pending until 3rd node will uncordoned.
+
 
