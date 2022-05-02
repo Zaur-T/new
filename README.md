@@ -91,7 +91,7 @@ kube-system   job.batch/helm-install-traefik       1/1           2m21s      8m26
 kube-system   job.batch/helm-install-traefik-crd   1/1           109s       8m26s
 ```
 
-### Start a Kubernetes Cluster
+### Test 1: Start a cassandra cluster using helm
 
 **clone cassandr helm chart from bitnami repo**
 `git clone https://github.com/bitnami/charts.git`
@@ -669,18 +669,32 @@ To connect to your database from outside the cluster execute the following comma
 
    kubectl port-forward --namespace cassandra svc/cassandra 9042:9042 &
    cqlsh -u cassandra -p $CASSANDRA_PASSWORD 127.0.0.1 9042
+```   
+   
+### Test 2: Run some CSQL statements
+
+
+**export cassandra password with:** 
 ```
-**export cassandra password with `export CASSANDRA_PASSWORD=$(kubectl get secret --namespace "cassandra" cassandra -o jsonpath="{.data.cassandra-password}" | base64 --decode)`**
+export CASSANDRA_PASSWORD=$(kubectl get secret --namespace "cassandra" cassandra -o jsonpath="{.data.cassandra-password}" | base64 --decode)
+```
+
 **run cassandra client with:**
+
 ```
 kubectl run --namespace cassandra cassandra-client --rm --tty -i --restart='Never' \
    --env CASSANDRA_PASSWORD=$CASSANDRA_PASSWORD \
     \
    --image docker.io/bitnami/cassandra:4.0.3-debian-10-r59 -- bash
 ```
-**run inside the pod sqlsh client:** `cqlsh -u cassandra -p $CASSANDRA_PASSWORD cassandra`
+
+**run inside the pod sqlsh client:**
+```
+cqlsh -u cassandra -p $CASSANDRA_PASSWORD cassandra
+```
+
 ### OR
-**shell into cassandra pod via K9s nad run**  `cqlsh -u cassandra -p $CASSANDRA_PASSWORD cassandra`
+**shell into cassandra pod via K9s and run**  `cqlsh -u cassandra -p $CASSANDRA_PASSWORD cassandra`
 
 **next run the following**:
 ```
@@ -697,7 +711,10 @@ CREATE TABLE shopping_cart (
 ```
 INSERT INTO shopping_cart (item_count, last_update_timestamp) values('3', '2022-05-02');
 ```
-**to show the data inseted**
+**to show the data inseted:**
 ```
 select * from shopping_cart
 ```
+
+### Test 3:  
+
